@@ -1,0 +1,3 @@
+Run, e.g.:
+
+cargo run -- --name MySynth --outputs 2 -a freq1,freq2
