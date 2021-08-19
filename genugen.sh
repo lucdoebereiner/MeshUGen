@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cargo build --release
 while getopts n:a:o: flag
 do
     case "${flag}" in

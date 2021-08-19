@@ -23,8 +23,25 @@ void RustSynth_Ctor(RustSynth* unit) {
 
   unit->state = new_state(SAMPLERATE);
 
-  set_graph(unit->state);
-    
+  float fbufnum = ZIN0(0);
+  uint32 bufnum = (int)fbufnum;
+  World* world = unit->mWorld;
+  if (bufnum >= world->mNumSndBufs)
+    bufnum = 0;
+  const SndBuf* buf = world->mSndBufs + bufnum;
+  ACQUIRE_SNDBUF_SHARED(buf);
+  
+  const float* bufData __attribute__((__unused__)) = buf->data;
+  uint32 bufChannels __attribute__((__unused__)) = buf->channels;
+  uint32 bufSamples __attribute__((__unused__)) = buf->samples;
+  uint32 bufFrames = buf->frames;
+  int mask __attribute__((__unused__)) = buf->mask;
+  int guardFrame __attribute__((__unused__)) = bufFrames - 2;
+  
+  set_graph(unit->state, bufData, bufFrames);
+
+  RELEASE_SNDBUF_SHARED(buf);
+  
   RustSynth_next_a(unit, 1);
 }
 

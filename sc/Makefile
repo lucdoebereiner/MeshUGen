@@ -14,6 +14,7 @@ SC_SERVER=${SC_SRC_INCLUDE}/server
 CC=g++
 CPPFLAGS=-std=c++11 -Wno-deprecated -Wno-unknown-pragmas -D_REENTRANT -DNDEBUG -DSC_MEMORY_ALIGNMENT=1 -DSC_LINUX -Wno-deprecated -fPIC -O3
 
+UGEN=AudioMesh
 SRCS=$(UGEN).cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
@@ -26,7 +27,7 @@ ugen: $(OBJS)
 	$(CC) $(CPPFLAGS) -I $(SC_PLUGIN_INTERFACE) -I $(SC_COMMON) -I $(SC_SERVER) -c $<
 
 
-install: $(UGEN).sc $(UGEN).so
+install: 
 	cp $(UGEN).sc $(SC_INSTALL_DIR)
 	cp $(UGEN).so $(SC_INSTALL_DIR)
 

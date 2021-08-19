@@ -1,6 +1,6 @@
-RustSynth : MultiOutUGen {
-	*ar { arg f1, f2;
-		^this.multiNewList(['audio', f1, f2]);
+AudioMesh : MultiOutUGen {
+	*ar { arg buf, ... args;
+		^this.multiNewList(['audio', buf] ++ args);
 	}
 
 	init {arg ... theInputs;
