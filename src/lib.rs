@@ -60,7 +60,7 @@ pub extern "C" fn set_graph(state: *mut UGenState, buffer: *mut c_float, length:
         (*state).graph =
             UGenGraph::from_json_string(json_string.to_string(), &mut (*state).flow).unwrap();
 
-        (*state).graph.offset_sound_ins(1);
+        (*state).graph.offset_sound_ins(2);
         // (*state).graph.init_after_deserialization();
         // (*state)
         //     .graph
@@ -131,6 +131,8 @@ pub extern "C" fn process(
                 .iter()
                 .map(|input| input[i as usize] as f64)
                 .collect();
+            //            println!("fac:{}", inputs[1]);
+            (*state).graph.set_edge_fac(inputs[1]);
             (*state)
                 .graph
                 .process(&(*state).flow, inputs.as_slice(), &mut (*state).output);

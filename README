@@ -1,3 +1,1 @@
-Example:
-name, number of outputs, input argument list
-./genugen.sh -n MySynth -o 2 -a "f1 f2 f3"
+./build.sh

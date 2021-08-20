@@ -1,6 +1,6 @@
 AudioMesh : MultiOutUGen {
-	*ar { arg buf, ... args;
-		^this.multiNewList(['audio', buf] ++ args);
+	*ar { arg numChannels, bufnum=0 ... args;
+		^this.multiNewList(['audio', numChannels, bufnum] ++ args);
 	}
 
 	init { arg argNumChannels ... theInputs;

@@ -12,7 +12,8 @@ s.reboot
 
 (
 {
-	var rst = RustSynth.ar(~jsonBuffer.bufnum,
+	var rst = AudioMesh.ar(2,~jsonBuffer.bufnum,
+		K2A.ar(MouseX.kr(0.001,2,1)),
 		SinOsc.ar(MouseX.kr(0.01,1000,1))*0.1,
 		SinOsc.ar(MouseY.kr(0.01,1000,1))*0.1);
 	(HPF.ar(rst,20)*0.5);
@@ -26,7 +27,8 @@ s.reboot
 
 (
 {
-	var rst = RustSynth.ar(~jsonBuffer.bufnum,
+	var rst = AudioMesh.ar(2,~jsonBuffer.bufnum,
+		K2A.ar(MouseX.kr(0.01,10,1)),
 		SinOsc.ar(MouseX.kr(0.01,1000,1))*0.1,
 		SinOsc.ar(MouseY.kr(0.01,1000,1))*0.2);
 	(HPF.ar(rst,20)*0.4);
@@ -41,7 +43,8 @@ s.reboot
 
 (
 {
-	var rst = RustSynth.ar(~jsonBuffer.bufnum,
+	var rst = AudioMesh.ar(2,~jsonBuffer.bufnum,
+		K2A.ar(MouseX.kr(0.01,10,1)),
 		SinOsc.ar(MouseX.kr(0.01,1000,1))*0.2,
 		SinOsc.ar(MouseY.kr(0.01,1000,1))*0.2);
 	(HPF.ar(rst,20)*0.6);
@@ -54,9 +57,10 @@ s.reboot
 
 (
 {
-	var rst = RustSynth.ar(~jsonBuffer.bufnum,
+	var rst = AudioMesh.ar(2,~jsonBuffer.bufnum,
+		K2A.ar(MouseX.kr(0.01,2,1)),
 		DC.ar(0),
 		DC.ar(0)) * 0.1;
-	rst.poll;
-}.scope
+	rst;
+}.play
 )
