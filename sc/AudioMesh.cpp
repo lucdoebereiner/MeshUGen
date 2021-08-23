@@ -23,7 +23,7 @@ void AudioMesh_Ctor(AudioMesh* unit) {
 
   unit->state = new_state(SAMPLERATE);
 
-  float fbufnum = ZIN0(0);
+  float fbufnum = IN0(1);
   uint32 bufnum = (int)fbufnum;
   World* world = unit->mWorld;
   if (bufnum >= world->mNumSndBufs)
@@ -37,8 +37,10 @@ void AudioMesh_Ctor(AudioMesh* unit) {
   uint32 bufFrames = buf->frames;
   int mask __attribute__((__unused__)) = buf->mask;
   int guardFrame __attribute__((__unused__)) = bufFrames - 2;
-  
-  set_graph(unit->state, bufData, bufFrames);
+
+
+  float n_outputs = IN0(0);
+  set_graph(unit->state, bufData, bufFrames, (uint32) n_outputs);
 
   RELEASE_SNDBUF_SHARED(buf);
   

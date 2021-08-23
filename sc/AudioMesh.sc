@@ -3,7 +3,8 @@ AudioMesh : MultiOutUGen {
 		^this.multiNewList(['audio', numChannels, bufnum] ++ args);
 	}
 
-	init { arg argNumChannels ... theInputs;
+	init { arg ... theInputs;
+		var argNumChannels = theInputs[0];
 		inputs = theInputs;
 		^this.initOutputs(argNumChannels, rate);
 	}

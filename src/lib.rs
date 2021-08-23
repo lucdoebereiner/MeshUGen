@@ -10,6 +10,9 @@ pub struct UGenState {
     output: Vec<f64>,
     flow: Vec<NodeIndex>,
     graph: UGenGraph,
+    n_outputs: usize,
+    n_inputs: usize,
+    input_offset: usize,
 }
 
 #[no_mangle]
@@ -19,6 +22,9 @@ pub extern "C" fn new_state(samplerate: c_double) -> *mut UGenState {
         output: Vec::new(),
         flow: Vec::new(),
         graph: UGenGraph::new(),
+        n_outputs: 0,
+        n_inputs: 0,
+        input_offset: 0,
     }))
 }
 
@@ -32,27 +38,17 @@ pub extern "C" fn state_free(state: *mut UGenState) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_graph(state: *mut UGenState, buffer: *mut c_float, length: c_uint) {
+pub extern "C" fn set_graph(
+    state: *mut UGenState,
+    buffer: *mut c_float,
+    length: c_uint,
+    n_channels: c_int,
+) {
     unsafe {
         let bytes_buffer_f: &[f32] = slice::from_raw_parts_mut(buffer, length as usize);
         let bytes_buffer: Vec<u8> = bytes_buffer_f.iter().map(|f| *f as u8).collect();
 
-        // let buffer_bytes: &[u8] =
-        //     std::slice::from_raw_parts(buffer as *const u8, (length as usize) * 4);
-
-        // let string_bytes: Vec<u8> = buffer_bytes
-        //     .chunks(4)
-        //     .map(|chunk| {
-        //         let rev_chunk: Vec<u8> = chunk.iter().rev().map(|b| *b).collect();
-        //         rev_chunk
-        //     })
-        //     .flatten()
-        //     .collect();
-
-        // let json_string = from_utf8(&string_bytes);
         let json_string = from_utf8(&bytes_buffer).unwrap();
-
-        //        *graph = UGenGraph::new();
 
         (*state).output = vec![0.0; 2];
         (*state).flow = vec![];
@@ -60,39 +56,13 @@ pub extern "C" fn set_graph(state: *mut UGenState, buffer: *mut c_float, length:
         (*state).graph =
             UGenGraph::from_json_string(json_string.to_string(), &mut (*state).flow).unwrap();
 
-        (*state).graph.offset_sound_ins(2);
-        // (*state).graph.init_after_deserialization();
+        (*state).n_inputs = (*state).graph.number_of_inputs();
+        (*state).n_outputs = n_channels as usize;
+        (*state).input_offset = 3 + n_channels as usize + 12;
         // (*state)
         //     .graph
-        //     .update_connections_and_flow(&mut (*state).flow);
-
-        //     println!("{:?}", json_string);
-
-        // let input1 = soundinput(1);
-        // let input2 = soundinput(2);
-        // let mut ugen1 = sinosc(10.0);
-        // let mut ugen2 = sinosc(0.0);
-        // //        let mut ugen2 = sinosc(200.0);
-        // ugen1.set_output(0, 1.0);
-        // ugen2.set_output(1, 1.0);
-        // //        ugen2.set_output(1, 1.0);
-        // let idx1 = (*state).graph.add(input1);
-        // let idx2 = (*state).graph.add(input2);
-        // let idx3 = (*state).graph.add(ugen1);
-        // let idx4 = (*state).graph.add(ugen2);
-        // (*state).graph.connect(idx1, idx3, Connection::new(0, 1.0));
-        // (*state).graph.connect(idx2, idx4, Connection::new(0, 1.0));
-        // (*state).output = vec![0.0; 2];
-        // (*state).flow = vec![];
-        // (*state)
-        //     .graph
-        //     .update_connections_and_flow(&mut (*state).flow);
-
-        // println!(
-        //     "outs: {}, ins: {:?}",
-        //     (*state).graph.number_of_outputs(),
-        //     (*state).graph.number_of_inputs()
-        // );
+        //     .offset_sound_ins(3 + n_channels as usize + 12);
+        (*state).graph.reset_outputs();
     }
 }
 
@@ -103,12 +73,13 @@ pub extern "C" fn process(
     sc_out: *mut *mut c_float,
     sc_nsamples: c_int,
 ) {
-    let n_out = (*state).graph.number_of_outputs();
-    let n_in = (*state).graph.number_of_inputs();
+    let n_out = (*state).n_outputs;
+    let n_in = (*state).n_inputs;
+    let total_n_in = n_in + 2 + n_out + 12;
 
     unsafe {
         let out_buffer: &mut [*mut f32] = slice::from_raw_parts_mut(sc_out, n_out as usize);
-        let in_buffer: &mut [*mut f32] = slice::from_raw_parts_mut(sc_in, n_in);
+        let in_buffer: &mut [*mut f32] = slice::from_raw_parts_mut(sc_in, total_n_in);
         let mut out_channels: Vec<&mut [f32]> = Vec::new();
         for c in 0..n_out {
             out_channels.push(slice::from_raw_parts_mut(
@@ -118,7 +89,7 @@ pub extern "C" fn process(
         }
         let mut in_channels: Vec<&mut [f32]> = Vec::new();
         if n_in > 0 {
-            for c in 0..n_in {
+            for c in 0..total_n_in {
                 in_channels.push(slice::from_raw_parts_mut(
                     in_buffer[c],
                     sc_nsamples as usize,
@@ -126,13 +97,67 @@ pub extern "C" fn process(
             }
         }
 
+        (*state).graph.set_edge_fac(in_channels[2][0] as f64);
+
+        (*state)
+            .graph
+            .set_edges_weight(in_channels[3 + n_out][0] as f64, 4, 0);
+        (*state)
+            .graph
+            .set_edges_weight(in_channels[4 + n_out][0] as f64, 4, 1);
+        (*state)
+            .graph
+            .set_edges_weight(in_channels[5 + n_out][0] as f64, 4, 2);
+        (*state)
+            .graph
+            .set_edges_weight(in_channels[6 + n_out][0] as f64, 4, 3);
+
+        (*state)
+            .graph
+            .set_edges_delay(in_channels[7 + n_out][0] as f64, 4, 0);
+        (*state)
+            .graph
+            .set_edges_delay(in_channels[8 + n_out][0] as f64, 4, 1);
+        (*state)
+            .graph
+            .set_edges_delay(in_channels[9 + n_out][0] as f64, 4, 2);
+        (*state)
+            .graph
+            .set_edges_delay(in_channels[10 + n_out][0] as f64, 4, 3);
+
+        (*state)
+            .graph
+            .set_edges_lp_freq(in_channels[11 + n_out][0] as f64, 4, 0);
+        (*state)
+            .graph
+            .set_edges_lp_freq(in_channels[12 + n_out][0] as f64, 4, 1);
+        (*state)
+            .graph
+            .set_edges_lp_freq(in_channels[13 + n_out][0] as f64, 4, 2);
+        (*state)
+            .graph
+            .set_edges_lp_freq(in_channels[14 + n_out][0] as f64, 4, 3);
+
+        //        println!("last freq: {}", in_channels[14][0]);
+
+        for channel in 0..n_out {
+            (*state)
+                .graph
+                .set_steto_output_channel(channel, in_channels[3 + channel][0] as f64);
+            // println!(
+            //     "steto for channel {} is {}",
+            //     channel,
+            //     in_channels[3 + channel][0] as f64
+            // );
+        }
+
         for i in 0..sc_nsamples {
             let inputs: Vec<f64> = in_channels
                 .iter()
+                .skip((*state).input_offset)
                 .map(|input| input[i as usize] as f64)
                 .collect();
-            //            println!("fac:{}", inputs[1]);
-            (*state).graph.set_edge_fac(inputs[1]);
+
             (*state)
                 .graph
                 .process(&(*state).flow, inputs.as_slice(), &mut (*state).output);
