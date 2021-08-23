@@ -43,6 +43,7 @@ s.volume = -6
 		LFNoise1.ar(2000)*0.1,
 		//SinOsc.ar(500)*0.5, 
 		//SinOsc.ar(112)*0.5
+		
 	);
 	(HPF.ar(rst,20)*0.5);
 }.play
